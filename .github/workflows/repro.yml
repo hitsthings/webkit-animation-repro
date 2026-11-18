@@ -1,5 +1,8 @@
 name: webkit-animation-repro
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
 jobs:
   repro:
     runs-on: ubuntu-latest
