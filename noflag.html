@@ -1,0 +1,31 @@
+<!doctype html><div id=r>r</div><div id=b>b</div><pre id=out></pre><script>
+// Default-rate animations only, so this runs with no experimental features.
+// mode=replace: a long opacity animation starts `lag` ms after the short fade; its tick timer is scheduled
+//   later than the fade's and may replace it.
+// mode=idle: nothing paints for `idle` ms before the fade starts, giving the page a chance to go visually idle.
+const q = new URLSearchParams(location.search);
+const mode = q.get('mode'), dur = +q.get('rd') || 80, N = +q.get('n') || 50;
+const lag = +q.get('lag') || 0, idle = +q.get('idle') || 0;
+const report = o => { out.textContent += JSON.stringify(o) + '\n'; if (location.protocol.startsWith('http')) fetch('/r', { method: 'POST', body: JSON.stringify(o) }); };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+(async () => {
+  let stuck = 0, sample = null;
+  for (let i = 0; i < N; i++) {
+    if (mode === 'idle') await sleep(idle);
+    const res = await new Promise(async res => {
+      const R = r.animate([{opacity:1},{opacity:0}], { duration: dur, fill: 'both' });
+      R.onfinish = () => res(null);
+      setTimeout(() => res({ playState: R.playState, currentTime: Math.round(R.currentTime) }), dur + 1200);
+      if (mode === 'replace') {
+        if (lag) await sleep(lag);
+        const L = b.animate([{opacity:1},{opacity:0.5}], { duration: 3000 });
+        setTimeout(() => L.cancel(), dur + 1200);
+      }
+    });
+    if (res) { stuck++; sample ??= res; }
+    await sleep(Math.random() * 40);
+  }
+  report({ cfg: location.search, stuck: `${stuck}/${N}`, sample });
+  report({ done: 1 });
+})();
+</script>

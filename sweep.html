@@ -1,0 +1,21 @@
+<!doctype html><div id=r>r</div><div id=b style="width:10px;background:red">b</div><script>
+const q = new URLSearchParams(location.search);
+const rate = +q.get('rate'), rDur = +q.get('rd'), bDur = +q.get('bd'), bProp = q.get('bp'), N = +q.get('n');
+const log = o => fetch('/r', { method: 'POST', body: JSON.stringify(o) });
+(async () => {
+  let stuck = 0, sample = null, at = [];
+  for (let i = 0; i < N; i++) {
+    const res = await new Promise(res => {
+      const opts = { duration: rDur }; if (rate) opts.frameRate = rate;
+      const R = r.animate([{opacity:1},{opacity:0}], opts);
+      if (bDur) b.animate(bProp === 'width' ? [{width:'10px'},{width:'200px'}] : [{opacity:1},{opacity:0.2}], { duration: bDur });
+      R.onfinish = () => res(null);
+      setTimeout(() => res({ playState: R.playState, currentTime: Math.round(R.currentTime) }), rDur + 1200);
+    });
+    if (res) { stuck++; sample ??= res; at.push(i); }
+    await new Promise(r => setTimeout(r, Math.random() * 40));
+  }
+  await log({ cfg: location.search, stuck: `${stuck}/${N}`, at, sample });
+  await log({ done: 1 });
+})();
+</script>

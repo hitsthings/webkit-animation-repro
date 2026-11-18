@@ -1,0 +1,24 @@
+{
+  "name": "webkit-animation-repro",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hitsthings/webkit-animation-repro.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hitsthings/webkit-animation-repro/issues"
+  },
+  "homepage": "https://github.com/hitsthings/webkit-animation-repro#readme",
+  "dependencies": {
+    "playwright": "1.61.1"
+  }
+}

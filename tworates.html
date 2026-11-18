@@ -1,0 +1,24 @@
+<!doctype html><div id=r>r</div><div id=b style="width:10px;background:red">b</div><pre id=out></pre><script>
+// A long animation pinned to a custom frame rate keeps a second rate registered in the timeline while a
+// default-rate fade ends at varying offsets from that rate's tick grid.
+const q = new URLSearchParams(location.search);
+const rate = +q.get('rate') || 30, from = +q.get('from') || 70, to = +q.get('to') || 110, N = +q.get('n') || 5;
+const report = o => { out.textContent += JSON.stringify(o) + '\n'; if (location.protocol.startsWith('http')) fetch('/r', { method: 'POST', body: JSON.stringify(o) }); };
+(async () => {
+  const bg = b.animate([{width:'10px'},{width:'200px'}], { duration: 1e7, frameRate: rate });
+  let total = 0, stuck = 0, samples = [];
+  for (let d = from; d <= to; d++) for (let i = 0; i < N; i++) {
+    total++;
+    const res = await new Promise(res => {
+      const R = r.animate([{opacity:1},{opacity:0}], { duration: d, fill: 'both' });
+      R.onfinish = () => res(null);
+      setTimeout(() => res({ d, playState: R.playState, currentTime: Math.round(R.currentTime) }), d + 1200);
+    });
+    if (res) { stuck++; if (samples.length < 5) samples.push(res); }
+    await new Promise(r => setTimeout(r, Math.random() * 40));
+  }
+  bg.cancel();
+  report({ rate, range: [from, to], stuck: `${stuck}/${total}`, samples });
+  report({ done: 1 });
+})();
+</script>

@@ -1,0 +1,60 @@
+<!doctype html><div id=host></div><div id=prev style="width:60px;height:20px;background:#aaa"></div><pre id=out></pre><script>
+// Mirrors how a JS animation library runs an 80ms popup exit: opacity as a Web Animation with an explicit
+// startTime a few ms in the past, while the library's own rAF loop writes transform on the same element.
+// Query parameters:
+//   ease   easing for the opacity fade (default ease-out)
+//   off    ms added to document.timeline.currentTime for startTime; 'none' leaves startTime unset (default -9)
+//   raf    1 = drive transform from requestAnimationFrame on the same element during the fade (default 1)
+//   block  ms of busy main thread right after the animation is created, as a slow render would cause (default 0)
+//   prior  1 = run an identical exit on another element 750ms before (default 1)
+//   n      trials (default 40)
+const q = new URLSearchParams(location.search);
+const ease = q.get('ease') || 'ease-out', offRaw = q.get('off') ?? '-9';
+const useRaf = (q.get('raf') ?? '1') === '1', block = +q.get('block') || 0, prior = (q.get('prior') ?? '1') === '1', N = +q.get('n') || 40;
+const report = o => { out.textContent += JSON.stringify(o) + '\n'; if (location.protocol.startsWith('http')) fetch('/r', { method: 'POST', body: JSON.stringify(o) }); };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function fade(el, from, to) {
+  const a = el.animate({ opacity: [from, to] }, { duration: 80, easing: ease, fill: 'both' });
+  if (offRaw !== 'none') a.startTime = document.timeline.currentTime + +offRaw;
+  return a;
+}
+function transformLoop(el, y) {
+  const t0 = performance.now(); let stop = false;
+  const step = t => {
+    if (stop) return;
+    const p = Math.min(1, (t - t0) / 80);
+    el.style.transform = `translateY(${y * p}px) scale(${1 - 0.5 * p})`;
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  return () => { stop = true; };
+}
+function exit(el) {
+  return new Promise(res => {
+    const a = fade(el, 1, 0);
+    const stopLoop = useRaf ? transformLoop(el, 10) : () => {};
+    if (block) { const end = performance.now() + block; while (performance.now() < end); }
+    a.onfinish = () => { a.cancel(); el.remove(); res(null); };
+    setTimeout(() => { stopLoop(); res({ playState: a.playState, currentTime: Math.round(a.currentTime) }); }, 1500);
+  });
+}
+(async () => {
+  let stuck = 0, sample = null;
+  for (let i = 0; i < N; i++) {
+    if (prior) { const p = prev.cloneNode(true); p.id = ''; document.body.append(p); fade(p, 0, 1); await sleep(300); await exit(p); await sleep(750 - 80); }
+    const el = document.createElement('div');
+    el.style.cssText = 'width:200px;height:80px;background:#ccc';
+    host.append(el);
+    fade(el, 0, 1);
+    await sleep(400);
+    // A key event handler or state update triggers the exit, not a rAF callback.
+    await new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = r; c.port2.postMessage(0); });
+    const res = await exit(el);
+    if (res) { stuck++; sample ??= res; el.remove(); }
+    await sleep(Math.random() * 40);
+  }
+  report({ cfg: location.search, stuck: `${stuck}/${N}`, sample });
+  report({ done: 1 });
+})();
+</script>

@@ -1,0 +1,21 @@
+<!doctype html><div id=r>r</div><div id=b style="width:10px;background:red">b</div><script>
+const log = o => fetch('/r', { method: 'POST', body: JSON.stringify(o) });
+(async () => {
+  for (const [rate, rDur, bDur] of [[10, 80, 90], [10, 80, 0], [0, 80, 90], [20, 40, 45], [30, 80, 85]]) {
+    const N = 30; let stuck = 0, sample = null;
+    for (let i = 0; i < N; i++) {
+      const res = await new Promise(res => {
+        const opts = { duration: rDur }; if (rate) opts.frameRate = rate;
+        const R = r.animate([{opacity:1},{opacity:0}], opts);
+        if (bDur) b.animate([{width:'10px'},{width:'200px'}], { duration: bDur });
+        R.onfinish = () => res(null);
+        setTimeout(() => res({ playState: R.playState, currentTime: Math.round(R.currentTime) }), 1500);
+      });
+      if (res) { stuck++; sample ??= res; }
+      await new Promise(r => setTimeout(r, 50));
+    }
+    await log({ rate, rDur, bDur, stuck: `${stuck}/${N}`, sample });
+  }
+  await log({ done: 1 });
+})();
+</script>
