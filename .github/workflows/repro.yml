@@ -18,13 +18,8 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npx playwright install --with-deps webkit
-      - name: MiniBrowser pages
+      - name: React + motion popup harness
         run: |
-          for qs in 'n=60' 'off=none&n=60' 'block=90&n=60'; do TMO=300000 node mb.mjs exit.html '' "?$qs" & done; wait
-          for qs in 'mode=replace&lag=0&n=60' 'mode=replace&lag=60&n=60'; do TMO=300000 node mb.mjs noflag.html '' "?$qs" & done; wait
-          TMO=300000 node mb.mjs sweep.html +WebAnimationsCustomFrameRate '?rate=10&rd=80&bd=90&bp=width&n=200' &
-          TMO=300000 node mb.mjs fr3.html +WebAnimationsCustomFrameRate & wait
-      - name: Playwright Escape harness
-        run: |
-          node h6.mjs 40 & node h6.mjs 40 & wait
-          node h5.mjs 30
+          node h7.mjs 100 3 &
+          node h7.mjs 100 3 '?work=60' &
+          wait

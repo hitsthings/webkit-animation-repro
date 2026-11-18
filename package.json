@@ -19,6 +19,12 @@
   },
   "homepage": "https://github.com/hitsthings/webkit-animation-repro#readme",
   "dependencies": {
-    "playwright": "1.61.1"
+    "motion": "^12.23.12",
+    "playwright": "1.61.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }
